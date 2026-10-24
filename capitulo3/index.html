@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Δt · Delta t — Simulador de movimiento de partículas</title>
+<meta name="description" content="Δt (Delta t), simulador interactivo de movimiento de partículas: algoritmos de Euler, ODE solvers, arrastre, trayectorias, decaimiento, movimiento 3D, niveles de simulación y algoritmos de integración. Autores: Nicolas de la Espriella Vélez P.h.d, Daniel José Salas Álvarez M.s.c, Pierre Augusto Peña salgado M.s.c.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2218%22 fill=%22%2322d3ee%22/><ellipse cx=%2250%22 cy=%2250%22 rx=%2246%22 ry=%2218%22 fill=%22none%22 stroke=%22%237c5cff%22 stroke-width=%226%22 transform=%22rotate(-30 50 50)%22/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="modal-fondo" id="login" role="dialog" aria-modal="true" aria-labelledby="login-tit" hidden>
+  <form class="modal card" id="login-form" novalidate>
+    <h2 id="login-tit">Identificación del estudiante</h2>
+    <p class="modal-sub">Δt · Simulador de movimiento de partículas</p>
+    <label for="f-nombre">Nombre del estudiante</label>
+    <input type="text" id="f-nombre" placeholder="Nombre y apellido" autocomplete="name">
+    <label for="f-materia">Nombre de la materia</label>
+    <input type="text" id="f-materia" placeholder="Ej. Física Computacional">
+    <label for="f-carrera">Carrera</label>
+    <select id="f-carrera"></select>
+    <div id="f-otra-caja" hidden>
+      <label for="f-otra">Nombre del programa</label>
+      <input type="text" id="f-otra" placeholder="Escribe el nombre del programa">
+    </div>
+    <div class="modal-fila">
+      <div>
+        <label for="f-grupo">Grupo</label>
+        <input type="text" id="f-grupo" placeholder="Ej. 801">
+      </div>
+      <div>
+        <label for="f-sem">Semestre</label>
+        <input type="text" id="f-sem" readonly aria-describedby="f-sem-nota">
+      </div>
+    </div>
+    <p class="modal-nota" id="f-sem-nota">El semestre se calcula a partir de la fecha de hoy.</p>
+    <p class="modal-error" id="f-error" role="alert" hidden></p>
+    <div class="modal-btns">
+      <button type="button" class="btn" id="f-cancelar" hidden>Cancelar</button>
+      <button type="submit" class="btn primary">Entrar</button>
+    </div>
+  </form>
+</div>
+<div class="modal-fondo" id="informe" role="dialog" aria-modal="true" aria-labelledby="inf-tit" hidden>
+  <div class="modal modal-ancho card">
+    <h2 id="inf-tit">Informe de simulación · Evaluación de usabilidad</h2>
+    <p class="modal-sub">ISO/IEC 25010:2011 · 24 ítems · escala Likert de 5 puntos</p>
+    <div id="inf-cuerpo"></div>
+    <p class="modal-error" id="inf-error" role="alert" hidden></p>
+    <div class="modal-btns" id="inf-btns"></div>
+  </div>
+</div>
+<header class="hero">
+  <button type="button" class="btn informe-btn" id="abrir-informe">Informe de simulación</button>
+  <div class="sesion" id="sesion-caja" hidden>
+    <div class="sesion-datos">
+      <strong id="sesion-nombre"></strong>
+      <span id="sesion-materia"></span>
+      <span id="sesion-det"></span>
+    </div>
+    <button type="button" class="btn sesion-btn" id="sesion-cambiar">Cambiar</button>
+  </div>
+  <h1 class="marca">
+    <span class="marca-sim">Δt</span>
+    <span class="marca-txt"><b>Delta t</b><i>Simulador de movimiento de partículas</i></span>
+  </h1>
+  <p class="autores">Autores: Nicolas de la Espriella Vélez P.h.d, Daniel José Salas Álvarez M.s.c, Pierre Augusto Peña salgado M.s.c</p>
+  <div class="barra">
+    <div class="campo ancho">
+      <label for="nav-sel">Ejercicio o problema</label>
+      <select id="nav-sel" aria-label="Elegir ejercicio o problema del capítulo"></select>
+    </div>
+    <div class="campo">
+      <label for="speed">Velocidad de la animación</label>
+      <select id="speed">
+        <option value="2">2× · rápida</option>
+        <option value="1">1× · normal</option>
+        <option value="0.5">0.5× · lenta</option>
+        <option value="0.25">0.25× · muy lenta</option>
+        <option value="0.1">0.1× · cámara lenta</option>
+      </select>
+    </div>
+  </div>
+</header>
+<div class="app">
+  <main id="content"></main>
+</div>
+<footer><b>Δt · Delta t</b> — simulador educativo · HTML + CSS + JavaScript · Arrastra las vistas 3D para rotarlas y usa la rueda para hacer zoom</footer>
+<script src="core.js"></script>
+<script src="mod_a.js"></script>
+<script src="mod_b.js"></script>
+<script src="mod_c.js"></script>
+<script src="mod_d.js"></script>
+</body>
+</html>

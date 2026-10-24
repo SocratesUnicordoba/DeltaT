@@ -1,0 +1,3 @@
+Versión anterior del simulador (una sola página con pestañas).
+No se carga desde index.html y redeclara g, $ y plot, que ahora viven en core.js.
+Se conserva solo como referencia histórica; no la añadas al HTML.

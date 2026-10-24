@@ -1,0 +1,24 @@
+# Dependencias
+node_modules/
+
+# Material con derechos de autor: no se publica
+*.pdf
+
+# Archivos generados por el propio simulador
+reporte-*.txt
+informe-usabilidad-*.txt
+
+# Sistema operativo
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# Dropbox
+.dropbox
+.dropbox.attr
+*.sb-*
+
+# Editores
+.vscode/
+.idea/
+*.swp
