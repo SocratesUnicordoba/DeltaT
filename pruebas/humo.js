@@ -1,7 +1,7 @@
 // Arnés de humo: ejecuta core.js + mod_*.js en un DOM/canvas simulado.
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const DIR = process.argv[2] || require('path').join(__dirname, '..');
-const FILES = ['core.js', 'mod_a.js', 'mod_b.js', 'mod_c.js', 'mod_d.js'];
+const FILES = ['i18n.js', 'core.js', 'mod_a.js', 'mod_b.js', 'mod_c.js', 'mod_d.js'];
 
 const noop = () => { };
 const grad = { addColorStop: noop };
@@ -17,7 +17,7 @@ function ctx2d() {
 const els = new Map();
 function el(id) {
   if (!els.has(id)) els.set(id, {
-    id, width: 820, height: 320, value: '', type: '', checked: false, innerHTML: '', textContent: '',
+    id, width: 820, height: 320, value: '', type: '', checked: false, options: [], innerHTML: '', textContent: '',
     style: {}, dataset: {}, files: null,
     classList: { toggle: noop, add: noop, remove: noop, contains: () => false },
     getContext: ctx2d, addEventListener: noop, setPointerCapture: noop, releasePointerCapture: noop,
@@ -34,7 +34,7 @@ const sandbox = {
   location: { hash: '' },
   FileReader: function () { this.readAsText = noop; },
   document: {
-    getElementById: el,
+    getElementById: el, documentElement: { lang: 'es' }, querySelector: () => null,
     createElement: () => el('__tmp' + Math.random()),
     querySelectorAll: () => [],
     addEventListener: noop,

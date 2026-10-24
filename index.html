@@ -53,7 +53,13 @@
   </div>
 </div>
 <header class="hero">
-  <button type="button" class="btn informe-btn" id="abrir-informe">Informe de simulación</button>
+  <div class="esquina-der">
+    <div class="campo idioma-caja">
+      <label for="lang">Idioma</label>
+      <select id="lang"><option value="es">Español</option><option value="en">English</option></select>
+    </div>
+    <button type="button" class="btn informe-btn" id="abrir-informe">Evaluación Simulador</button>
+  </div>
   <div class="sesion" id="sesion-caja" hidden>
     <div class="sesion-datos">
       <strong id="sesion-nombre"></strong>
@@ -64,7 +70,7 @@
   </div>
   <h1 class="marca">
     <span class="marca-sim">Δt</span>
-    <span class="marca-txt"><b>Delta t</b><i>Simulador de movimiento de partículas</i></span>
+    <span class="marca-txt"><b>Delta t</b><i id="lema">Simulador de movimiento de partículas</i></span>
   </h1>
   <p class="autores">Autores: Nicolas de la Espriella Vélez Ph. D., Daniel José Salas Álvarez M. Sc., Pierre Augusto Peña salgado M. Sc.</p>
   <div class="barra">
@@ -87,7 +93,8 @@
 <div class="app">
   <main id="content"></main>
 </div>
-<footer><b>Δt · Delta t</b> — simulador educativo · HTML + CSS + JavaScript · Arrastra las vistas 3D para rotarlas y usa la rueda para hacer zoom</footer>
+<footer><b>Δt · Delta t</b> — <span id="pie">simulador educativo · Arrastra las vistas 3D para rotarlas y usa la rueda para hacer zoom</span></footer>
+<script src="i18n.js"></script>
 <script src="core.js"></script>
 <script src="mod_a.js"></script>
 <script src="mod_b.js"></script>

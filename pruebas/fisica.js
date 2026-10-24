@@ -4,15 +4,15 @@ const DIR = process.argv[2] || require('path').join(__dirname, '..');
 const noop = () => { }, grad = { addColorStop: noop };
 const ctx2d = () => new Proxy({ createRadialGradient: () => grad, createLinearGradient: () => grad, measureText: () => ({ width: 10 }) },
   { get(t, k) { return k in t ? t[k] : (typeof k === 'string' ? noop : undefined) }, set(t, k, v) { t[k] = v; return true } });
-const els = new Map(), el = id => { if (!els.has(id)) els.set(id, { id, width: 820, height: 320, value: '', type: '', checked: false, innerHTML: '', style: {}, dataset: {}, classList: { toggle: noop, add: noop, remove: noop }, getContext: ctx2d, addEventListener: noop, setPointerCapture: noop }); return els.get(id) };
+const els = new Map(), el = id => { if (!els.has(id)) els.set(id, { id, width: 820, height: 320, value: '', type: '', checked: false, options: [], innerHTML: '', style: {}, dataset: {}, classList: { toggle: noop, add: noop, remove: noop }, getContext: ctx2d, addEventListener: noop, setPointerCapture: noop }); return els.get(id) };
 const sb = {
   console, Math, Date, JSON, Number, String, Array, Object, isFinite, isNaN, parseFloat, parseInt, Float64Array, Infinity, NaN, Proxy, Map, Set, Error,
   performance: { now: () => Date.now() }, setTimeout: (fn) => { try { fn(); } catch (e) {} }, clearTimeout: () => {}, history: { replaceState: noop }, location: { hash: '' }, FileReader: function () { this.readAsText = noop },
-  document: { getElementById: el, createElement: () => el('__t'), querySelectorAll: () => [], addEventListener: noop },
+  document: { getElementById: el, documentElement: { lang: 'es' }, querySelector: () => null, createElement: () => el('__t'), querySelectorAll: () => [], addEventListener: noop },
   window: { addEventListener: noop, scrollTo: noop }, requestAnimationFrame: noop,
 };
 sb.globalThis = sb;
-const src = ['core.js', 'mod_a.js', 'mod_b.js', 'mod_c.js', 'mod_d.js'].map(f => fs.readFileSync(path.join(DIR, f), 'utf8')).join('\n;\n');
+const src = ['i18n.js', 'core.js', 'mod_a.js', 'mod_b.js', 'mod_c.js', 'mod_d.js'].map(f => fs.readFileSync(path.join(DIR, f), 'utf8')).join('\n;\n');
 const ctx = vm.createContext(sb);
 vm.runInContext(src, ctx, { filename: 'bundle.js' });
 const run = e => vm.runInContext(e, ctx);

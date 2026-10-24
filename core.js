@@ -192,13 +192,13 @@ function setVals(obj, anim = true) {
 }
 function show(id) {
   stopAnim();
-  const m = MODULES.find(x => x.id === id); CUR = m; history.replaceState(null, '', '#' + id);
+  const m = trMod(MODULES.find(x => x.id === id)); CUR = m; history.replaceState(null, '', '#' + id);
   if (typeof VISITADOS !== 'undefined') VISITADOS.add(m.tag);   // para el informe de simulación
   Object.keys(PLOTS).forEach(k => delete PLOTS[k]);            // v1, v2… se reutilizan entre módulos
   const sel = $('nav-sel'); if (sel && sel.value !== id) sel.value = id;   // asignar no dispara 'change'
   const views = m.views.map(v => `<div class="card view ${v.half ? '' : 'full'}"><h3>${v.title}</h3>${v.html ? `<div id="${v.id}" class="htmlview"></div>` : `<canvas id="${v.id}" width="${v.w || 820}" height="${v.h || 320}"></canvas>`}${v.hint ? `<p class="hint">${v.hint}</p>` : ''}</div>`).join('');
-  const btns = (m.buttons || [{ label: '▶ Simular', primary: true, fn: 'run' }])
-    .concat([{ label: '📄 Reporte .txt', fn: mod => reporteModulo(mod) }]);   // concat: no muta el módulo
+  const btns = (m.buttons || [{ label: T('simular'), primary: true, fn: 'run' }])
+    .concat([{ label: T('btnReporte'), fn: mod => reporteModulo(mod) }]);   // concat: no muta el módulo
   $('content').innerHTML = `<div class="mod-head"><span class="badge">${m.tag} · Sección ${m.sec}</span><h2>${m.title}</h2><p>${m.desc}</p></div>
   <section class="panel active"><aside class="card controls">${m.controls.map(ctrlHTML).join('')}
   <div class="btns">${btns.map((b, i) => `<button class="btn ${b.primary ? 'primary' : ''}" id="b-${i}">${b.label}</button>`).join('')}</div>
@@ -212,10 +212,10 @@ function show(id) {
 function buildNav() {
   const sel = $('nav-sel'); if (!sel) return;
   const groups = {};
-  MODULES.forEach(m => (groups[m.group] = groups[m.group] || []).push(m));
+  MODULES.map(trMod).forEach(m => (groups[m.group] = groups[m.group] || []).push(m));
   sel.innerHTML = Object.entries(groups).map(([gn, ms]) =>
     `<optgroup label="${gn}">${ms.map(m => `<option value="${m.id}">${m.tag} · ${m.short}</option>`).join('')}</optgroup>`).join('');
-  sel.addEventListener('change', () => show(sel.value));
+  sel.onchange = () => show(sel.value);
 }
 function initVelocidad() {
   const sel = $('speed'); if (!sel) return;
@@ -245,6 +245,7 @@ let SESION = null;
 // La sesión vive en sessionStorage: sobrevive a recargas y a navegar dentro de la pestaña,
 // pero el navegador la borra al cerrarse, que es justo lo que se quiere de un inicio de sesión.
 // (La velocidad de la animación sigue en localStorage: es una preferencia, no un dato de sesión.)
+let REPINTAR_SESION = null;
 const leerSesion = () => { try { return JSON.parse(sessionStorage.getItem('cap3-sesion') || 'null'); } catch (e) { return null; } };
 const guardarSesion = s => { try { sessionStorage.setItem('cap3-sesion', JSON.stringify(s)); } catch (e) { /* sin almacenamiento */ } };
 // restos de versiones anteriores, que sí persistían entre cierres del navegador
@@ -255,19 +256,17 @@ function initSesion() {
   const sel = $('f-carrera'), otraCaja = $('f-otra-caja'), otra = $('f-otra');
   const nombre = $('f-nombre'), materia = $('f-materia'), grupo = $('f-grupo'), sem = $('f-sem'), err = $('f-error'), cancelar = $('f-cancelar');
 
-  sel.innerHTML = Object.entries(PREGRADOS).map(([fac, ps]) =>
-    `<optgroup label="${fac}">${ps.map(p => `<option value="${p}">${p}</option>`).join('')}</optgroup>`).join('') +
-    '<option value="__otra">Otro programa…</option>';
+  llenarCarreras();
   const verOtra = () => { otraCaja.hidden = sel.value !== '__otra'; };
   sel.addEventListener('change', verOtra);
 
-  const pintarSesion = () => {
+  const pintarSesion = REPINTAR_SESION = () => {
     const cj = $('sesion-caja'), nm = $('sesion-nombre'), mt = $('sesion-materia'), dt = $('sesion-det');
     if (!cj || !SESION) return;
     nm.textContent = nm.title = SESION.nombre;
     mt.textContent = mt.title = SESION.materia || '';
     mt.hidden = !SESION.materia;                       // sin materia, no se deja la línea vacía
-    dt.textContent = dt.title = `${SESION.carrera} · Grupo ${SESION.grupo || '—'} · ${SESION.semestre}`;
+    dt.textContent = dt.title = `${SESION.carrera} · ${T('grupoCorto')} ${SESION.grupo || '—'} · ${SESION.semestre}`;
     cj.hidden = false;
   };
   const abrir = () => {
@@ -305,7 +304,67 @@ function initSesion() {
   else abrir();
 }
 
+// ---------- Idioma ----------
+const dimTxt = d => LANG === 'en' ? (I18N_DIM[d] || d) : d;
+const itemTxt = (q, txt) => LANG === 'en' ? (I18N_ITEM[q] || txt) : txt;
+
+function llenarCarreras() {
+  const sel = $('f-carrera'); if (!sel) return;
+  const antes = sel.value;
+  sel.innerHTML = Object.entries(PREGRADOS).map(([fac, ps]) =>
+    `<optgroup label="${LANG === 'en' ? (I18N_FAC[fac] || fac) : fac}">` +
+    ps.map(x => `<option value="${x}">${x}</option>`).join('') + '</optgroup>').join('') +
+    `<option value="__otra">${T('otroPrograma')}</option>`;
+  if (antes) sel.value = antes;
+}
+
+// Reescribe todos los textos fijos de la página con el idioma activo.
+function aplicarIdioma() {
+  const q = s => document.querySelector(s);
+  const set = (s, t) => { const e = q(s); if (e) e.textContent = t; };
+  const ph = (s, t) => { const e = q(s); if (e) e.placeholder = t; };
+  document.documentElement.lang = LANG;
+  set('#lema', T('lema'));
+  set('#pie', T('pie'));
+  set('label[for="nav-sel"]', T('ejercicio'));
+  set('label[for="speed"]', T('velocidad'));
+  set('label[for="lang"]', T('idioma'));
+  const sp = $('speed');
+  if (sp) ['vel2', 'vel1', 'vel05', 'vel025', 'vel01'].forEach((k, i) => { if (sp.options[i]) sp.options[i].text = T(k); });
+  set('#abrir-informe', T('btnInforme'));
+  set('#sesion-cambiar', T('cambiar'));
+  set('#login-tit', T('loginTit'));
+  set('#login-form .modal-sub', 'Δt · ' + T('lema'));
+  set('label[for="f-nombre"]', T('lblNombre')); ph('#f-nombre', T('phNombre'));
+  set('label[for="f-materia"]', T('lblMateria')); ph('#f-materia', T('phMateria'));
+  set('label[for="f-carrera"]', T('lblCarrera'));
+  set('label[for="f-otra"]', T('lblOtra')); ph('#f-otra', T('phOtra'));
+  set('label[for="f-grupo"]', T('lblGrupo')); ph('#f-grupo', T('phGrupo'));
+  set('label[for="f-sem"]', T('lblSem'));
+  set('#f-sem-nota', T('notaSem'));
+  set('#f-cancelar', T('cancelar'));
+  set('#login-form button[type="submit"]', T('entrar'));
+  set('#inf-tit', T('infTit'));
+  set('#informe .modal-sub', T('infSub'));
+  llenarCarreras();
+  if (REPINTAR_SESION && SESION) REPINTAR_SESION();
+}
+
+function initIdioma() {
+  const sel = $('lang'); if (!sel) return;
+  try { const g = localStorage.getItem('cap3-lang'); if (g === 'en' || g === 'es') LANG = g; } catch (e) { /* sin almacenamiento */ }
+  sel.value = LANG;
+  aplicarIdioma();
+  sel.addEventListener('change', () => {
+    LANG = sel.value === 'en' ? 'en' : 'es';
+    try { localStorage.setItem('cap3-lang', LANG); } catch (e) { /* sin almacenamiento */ }
+    aplicarIdioma(); buildNav();
+    if (CUR) show(CUR.id);              // repintar el módulo abierto en el nuevo idioma
+  });
+}
+
 window.addEventListener('DOMContentLoaded', () => {
+  initIdioma();
   buildNav(); initVelocidad(); initSesion(); initInforme();
   const ir = () => { const h = location.hash.slice(1); show(MODULES.some(m => m.id === h) ? h : MODULES[0].id); };
   // también al pegar una URL con #id en una pestaña ya abierta o al usar atrás/adelante
@@ -373,33 +432,34 @@ function textoInforme(resp, R) {
   const sep = '='.repeat(78), sub = '-'.repeat(78), L = [];
   const fila = (dim, n, media, sc, niv) =>
     '  ' + String(dim).padEnd(36) + String(n).padStart(5) + String(media).padStart(8) + String(sc).padStart(10) + '   ' + niv;
-  L.push(sep, '  Δt · DELTA T — INFORME DE SIMULACIÓN', '  Evaluación de usabilidad ISO/IEC 25010:2011', sep, '');
-  L.push(`Fecha y hora    : ${fecha}`);
-  L.push(`Estudiante      : ${s.nombre || '(sin registrar)'}`);
-  L.push(`Materia         : ${s.materia || '(sin registrar)'}`);
-  L.push(`Carrera         : ${s.carrera || '(sin registrar)'}`);
-  L.push(`Grupo           : ${s.grupo || '(sin registrar)'}`);
-  L.push(`Semestre        : ${s.semestre || '(sin registrar)'}`);
-  L.push(`Módulo abierto  : ${CUR ? CUR.tag + ' · ' + CUR.short : '—'}`);
-  L.push(`Módulos usados  : ${VISITADOS.size} de ${MODULES.length}` + (VISITADOS.size ? '  [' + [...VISITADOS].join(', ') + ']' : ''));
-  L.push('', 'INSTRUMENTO', sub);
-  L.push('  Escala Likert de 5 puntos (1 = Totalmente en desacuerdo, 5 = Totalmente de acuerdo)');
-  L.push('  24 ítems agrupados en 7 dimensiones de usabilidad');
-  L.push('  Ítems invertidos antes del análisis: Q3, Q6, Q9, Q14');
-  L.push('  Score (%) = (Media - 1) / 4 x 100');
-  L.push('  Niveles: Alto >= 70 %  ·  Moderado 50-69 %  ·  Bajo < 50 %');
-  L.push('', 'RESPUESTAS', sub);
-  L.push('  Ítem  Dimensión                             Resp.  Ajust.  Descripción');
+  const et = (k, v) => L.push(T(k).padEnd(15) + ' : ' + v);
+  L.push(sep, '  Δt · DELTA T — ' + T('repUsa'), '  ' + T('repUsaSub'), sep, '');
+  et('rFecha', fecha);
+  et('rEstudiante', s.nombre || T('rSinReg'));
+  et('rMateria', s.materia || T('rSinReg'));
+  et('rCarrera', s.carrera || T('rSinReg'));
+  et('rGrupo', s.grupo || T('rSinReg'));
+  et('rSemestre', s.semestre || T('rSinReg'));
+  et('rModulo', CUR ? CUR.tag + ' · ' + CUR.short : '—');
+  et('rUsados', `${VISITADOS.size} ${T('rDe')} ${MODULES.length}` + (VISITADOS.size ? '  [' + [...VISITADOS].join(', ') + ']' : ''));
+  L.push('', T('sInstr'), sub);
+  L.push('  ' + T('iEscala'));
+  L.push('  ' + T('iAgrup'));
+  L.push('  ' + T('iInv'));
+  L.push('  Score (%) = (' + T('colMedia') + ' - 1) / 4 x 100');
+  L.push('  ' + T('iNiveles'));
+  L.push('', T('sRespuestas'), sub);
+  L.push('  ' + T('hItem').padEnd(6) + T('colDim').padEnd(38) + T('hResp').padStart(5) + T('hAjust').padStart(8) + '  ' + T('hDescr'));
   ITEMS.forEach(([q, dim, txt, inv]) => {
-    L.push('  ' + q.padEnd(6) + dim.padEnd(38) + String(resp[q]).padStart(4) + String(R.aj[q]).padStart(8) +
-      (inv ? '  (inv.) ' : '  ') + txt);
+    L.push('  ' + q.padEnd(6) + dimTxt(dim).padEnd(38) + String(resp[q]).padStart(5) + String(R.aj[q]).padStart(8) +
+      (inv ? '  (inv.) ' : '  ') + itemTxt(q, txt));
   });
-  L.push('', 'RESULTADOS POR DIMENSIÓN', sub);
-  L.push(fila('Dimensión', 'Ítems', 'Media', 'Score', 'Nivel'));
-  R.porDim.forEach(p => L.push(fila(p.dim, p.n, p.media.toFixed(2), p.score.toFixed(1) + ' %', p.nivel)));
+  L.push('', T('sPorDim'), sub);
+  L.push(fila(T('colDim'), T('colItems'), T('colMedia'), T('colScore'), T('colNivel')));
+  R.porDim.forEach(p => L.push(fila(dimTxt(p.dim), p.n, p.media.toFixed(2), p.score.toFixed(1) + ' %', p.nivel)));
   L.push('  ' + '-'.repeat(74));
   L.push(fila('GLOBAL', R.global.n, R.global.media.toFixed(2), R.global.score.toFixed(1) + ' %', R.global.nivel));
-  L.push('', sep, '  Generado por Δt · Delta t — Simulador de movimiento de partículas',
+  L.push('', sep, '  ' + T('generadoPor'),
     '  ' + AUTORES, sep, '');
   return L.join('\r\n');
 }
@@ -417,19 +477,19 @@ function initInforme() {
   const abrirBtn = $('abrir-informe'); if (!caja || !abrirBtn) return;
 
   const formulario = () => {
-    let h = '<div class="inf-leyenda"><span><b>1</b> Totalmente en desacuerdo</span><span><b>2</b> En desacuerdo</span>' +
-      '<span><b>3</b> Neutral</span><span><b>4</b> De acuerdo</span><span><b>5</b> Totalmente de acuerdo</span></div>';
+    let h = '<div class="inf-leyenda">' + [1, 2, 3, 4, 5]
+      .map(n => `<span><b>${n}</b> ${T('esc' + n)}</span>`).join('') + '</div>';
     DIMS.forEach(d => {
-      h += `<div class="inf-dim">${d}</div>`;
+      h += `<div class="inf-dim">${dimTxt(d)}</div>`;
       ITEMS.filter(i => i[1] === d).forEach(([q, , txt, inv]) => {
-        h += `<div class="inf-item" id="fila-${q}"><code>${q}</code><p>${txt}${inv ? ' <em>(invertida)</em>' : ''}</p><div class="inf-esc">` +
+        h += `<div class="inf-item" id="fila-${q}"><code>${q}</code><p>${itemTxt(q, txt)}${inv ? ' <em>' + T('invertida') + '</em>' : ''}</p><div class="inf-esc">` +
           [1, 2, 3, 4, 5].map(v => `<label title="${v}"><input type="radio" name="${q}" value="${v}"><span>${v}</span></label>`).join('') +
           '</div></div>';
       });
     });
     cuerpo.innerHTML = h;
-    btns.innerHTML = '<button type="button" class="btn" id="inf-cerrar">Cancelar</button>' +
-      '<button type="button" class="btn primary" id="inf-calcular">Calcular y generar .txt</button>';
+    btns.innerHTML = `<button type="button" class="btn" id="inf-cerrar">${T('cancelar')}</button>` +
+      `<button type="button" class="btn primary" id="inf-calcular">${T('calcular')}</button>`;
     $('inf-cerrar').onclick = () => { caja.hidden = true; };
     $('inf-calcular').onclick = calcularYmostrar;
     err.hidden = true;
@@ -442,12 +502,12 @@ function initInforme() {
     const d = document.createElement('div');
     d.className = 'modal-fondo'; d.id = 'adios';
     d.innerHTML = '<div class="modal modal-centro card">' +
-      '<h2>Informe descargado</h2>' +
+      `<h2>${T('descargado')}</h2>` +
       '<p class="modal-sub">' + archivo + '</p>' +
-      '<p class="modal-nota">Gracias por evaluar Δt. Esta pestaña se cierra sola; si el navegador no lo permite, ciérrala tú con Ctrl+W.</p>' +
+      `<p class="modal-nota">${T('gracias')}</p>` +
       '<div class="modal-btns">' +
-      '<button type="button" class="btn" id="adios-volver">Volver al simulador</button>' +
-      '<button type="button" class="btn primary" id="adios-cerrar">Cerrar pestaña</button>' +
+      `<button type="button" class="btn" id="adios-volver">${T('volverSim')}</button>` +
+      `<button type="button" class="btn primary" id="adios-cerrar">${T('cerrarPest')}</button>` +
       '</div></div>';
     document.body.appendChild(d);
     $('adios-volver').onclick = () => d.remove();
@@ -462,20 +522,20 @@ function initInforme() {
       if (m) resp[q] = +m.value; else { faltan.push(q); $('fila-' + q).classList.add('inf-falta'); }
     });
     if (faltan.length) {
-      err.textContent = `Faltan ${faltan.length} ítem(s) por responder: ${faltan.join(', ')}.`;
+      err.textContent = T('faltan')(faltan.length) + faltan.join(', ') + '.';
       err.hidden = false;
       $('fila-' + faltan[0]).scrollIntoView({ block: 'center', behavior: 'smooth' });
       return;
     }
     err.hidden = true;
     const R = calcularUsabilidad(resp), txt = textoInforme(resp, R);
-    cuerpo.innerHTML = '<div class="inf-res">' + tbl(['Dimensión', 'Ítems', 'Media', 'Score', 'Nivel'],
-      R.porDim.map(p => [p.dim, p.n, p.media.toFixed(2), p.score.toFixed(1) + ' %', p.nivel])
+    cuerpo.innerHTML = '<div class="inf-res">' + tbl([T('colDim'), T('colItems'), T('colMedia'), T('colScore'), T('colNivel')],
+      R.porDim.map(p => [dimTxt(p.dim), p.n, p.media.toFixed(2), p.score.toFixed(1) + ' %', p.nivel])
         .concat([['<b>GLOBAL</b>', `<b>${R.global.n}</b>`, `<b>${R.global.media.toFixed(2)}</b>`,
           `<b>${R.global.score.toFixed(1)} %</b>`, `<b>${R.global.nivel}</b>`]])) + '</div>' +
-      '<p class="hint">Media de los 24 ítems con Q3, Q6, Q9 y Q14 ya invertidos. Score = (Media − 1) / 4 × 100. Alto ≥ 70 % · Moderado 50–69 % · Bajo &lt; 50 %.</p>';
-    btns.innerHTML = '<button type="button" class="btn" id="inf-volver">Volver al cuestionario</button>' +
-      '<button type="button" class="btn primary" id="inf-bajar">Descargar .txt</button>';
+      `<p class="hint">${T('notaScore')}</p>`;
+    btns.innerHTML = `<button type="button" class="btn" id="inf-volver">${T('volverCuest')}</button>` +
+      `<button type="button" class="btn primary" id="inf-bajar">${T('descargar')}</button>`;
     $('inf-volver').onclick = formulario;
     const s = SESION || {}, d = new Date(), f = n => String(n).padStart(2, '0');
     const limpio = (s.nombre || 'anonimo').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^\w]+/g, '-').toLowerCase();
@@ -544,7 +604,7 @@ function datosGraficados(m) {
     const paso = Math.max(1, Math.ceil(n / MAX));
     out.push('', `  ${v.title}`);
     if (mismaX) {
-      out.push(`    (${Math.ceil(n / paso)} de ${n} puntos · 1 de cada ${paso})`);
+      out.push(`    (${Math.ceil(n / paso)} ${T('rDe')} ${n} ${T('puntos')} · ${T('unoDe')} ${paso})`);
       out.push('    ' + ['x', ...usar.map((s, i) => s.label || 'serie ' + (i + 1))]
         .map(c => String(c).slice(0, 15).padStart(16)).join(''));
       for (let i = 0; i < n; i += paso)
@@ -553,7 +613,7 @@ function datosGraficados(m) {
     } else {
       usar.forEach((s, k) => {
         const ns = s.pts.length, ps = Math.max(1, Math.ceil(ns / MAX));
-        out.push(`    Serie: ${s.label || 'serie ' + (k + 1)}  (${Math.ceil(ns / ps)} de ${ns} puntos · 1 de cada ${ps})`);
+        out.push(`    ${T('serie')}: ${s.label || T('serie') + ' ' + (k + 1)}  (${Math.ceil(ns / ps)} ${T('rDe')} ${ns} ${T('puntos')} · ${T('unoDe')} ${ps})`);
         out.push('    ' + 'x'.padStart(16) + 'y'.padStart(16));
         for (let i = 0; i < ns; i += ps) out.push('    ' + numTxt(s.pts[i][0]).padStart(16) + numTxt(s.pts[i][1]).padStart(16));
       });
@@ -567,26 +627,27 @@ function textoReporte(m) {
   const fecha = `${d.getFullYear()}-${f(d.getMonth() + 1)}-${f(d.getDate())} ${f(d.getHours())}:${f(d.getMinutes())}`;
   const sep = '='.repeat(78), sub = '-'.repeat(78), L = [];
   const sangrar = t => t.split('\n').map(x => '  ' + x).join('\n');
-  L.push(sep, '  Δt · DELTA T — REPORTE DE SIMULACIÓN', `  ${m.tag} · ${m.title}`, sep, '');
-  L.push(`Fecha y hora   : ${fecha}`);
-  L.push(`Estudiante     : ${s.nombre || '(sin registrar)'}`);
-  L.push(`Materia        : ${s.materia || '(sin registrar)'}`);
-  L.push(`Carrera        : ${s.carrera || '(sin registrar)'}`);
-  L.push(`Grupo          : ${s.grupo || '(sin registrar)'}`);
-  L.push(`Semestre       : ${s.semestre || '(sin registrar)'}`);
-  L.push(`Sección        : ${m.sec} — ${m.group}`);
-  L.push('', 'ENUNCIADO', sub, sangrar(htmlATexto(m.desc || '')));
+  const et = (k, v) => L.push(T(k).padEnd(15) + ' : ' + v);
+  L.push(sep, '  Δt · DELTA T — ' + T('repEjer'), `  ${m.tag} · ${m.title}`, sep, '');
+  et('rFecha', fecha);
+  et('rEstudiante', s.nombre || T('rSinReg'));
+  et('rMateria', s.materia || T('rSinReg'));
+  et('rCarrera', s.carrera || T('rSinReg'));
+  et('rGrupo', s.grupo || T('rSinReg'));
+  et('rSemestre', s.semestre || T('rSinReg'));
+  et('rSeccion', `${m.sec} — ${m.group}`);
+  L.push('', T('sEnunciado'), sub, sangrar(htmlATexto(m.desc || '')));
 
   const ctrls = (m.controls || []).filter(c => c.type !== 'sep');
   if (ctrls.length) {
     const an = Math.max(...ctrls.map(c => htmlATexto(c.label).length));
-    L.push('', 'PARÁMETROS DE LA SIMULACIÓN', sub);
+    L.push('', T('sParam'), sub);
     ctrls.forEach(c => L.push('  ' + htmlATexto(c.label).padEnd(an) + ' : ' + valorControl(c)));
   }
-  if (m.eq) L.push('', 'ECUACIONES', sub, sangrar(htmlATexto(m.eq)));
+  if (m.eq) L.push('', T('sEcu'), sub, sangrar(htmlATexto(m.eq)));
 
   const est = $('stats');
-  if (est && est.textContent.trim()) L.push('', 'RESULTADOS', sub, sangrar(htmlATexto(est.innerHTML)));
+  if (est && est.textContent.trim()) L.push('', T('sResultados'), sub, sangrar(htmlATexto(est.innerHTML)));
 
   (m.views || []).filter(v => v.html).forEach(v => {
     const e = $(v.id);
@@ -594,9 +655,9 @@ function textoReporte(m) {
   });
 
   const dat = datosGraficados(m);
-  if (dat.length) L.push('', 'DATOS GRAFICADOS', sub, ...dat);
+  if (dat.length) L.push('', T('sDatos'), sub, ...dat);
 
-  L.push('', sep, '  Generado por Δt · Delta t — Simulador de movimiento de partículas',
+  L.push('', sep, '  ' + T('generadoPor'),
     '  ' + AUTORES, sep, '');
   return L.join('\r\n');
 }
@@ -609,6 +670,6 @@ function reporteModulo(m) {
   const nombre = `reporte-${limpio(m.tag)}-${limpio(s.nombre || 'anonimo')}-${d.getFullYear()}${f(d.getMonth() + 1)}${f(d.getDate())}.txt`;
   descargarTxt(nombre, textoReporte(m));
   const e = $('stats');
-  if (e) e.insertAdjacentHTML('afterbegin', `<p class="hint" id="aviso-rep">Reporte descargado: <b>${nombre}</b></p>`);
+  if (e) e.insertAdjacentHTML('afterbegin', `<p class="hint" id="aviso-rep">${T('repDescargado')} <b>${nombre}</b></p>`);
   setTimeout(() => { const a = $('aviso-rep'); if (a) a.remove(); }, 6000);
 }
