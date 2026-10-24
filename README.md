@@ -5,8 +5,8 @@ Simulador interactivo de movimiento de partículas. Reúne 23 módulos ejecutabl
 dimensiones, procesos de decaimiento, niveles de simulación y los algoritmos de
 integración del apéndice— cada uno con su animación, sus gráficas y su reporte.
 
-**Autores:** Nicolas de la Espriella Vélez P.h.d, Daniel José Salas Álvarez M.s.c,
-Pierre Augusto Peña salgado M.s.c
+**Autores:** Nicolas de la Espriella Vélez Ph. D., Daniel José Salas Álvarez M. Sc.,
+Pierre Augusto Peña salgado M. Sc.
 
 ## Cómo ejecutarlo
 

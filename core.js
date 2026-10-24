@@ -349,7 +349,7 @@ const ITEMS = [
 ];
 const DIMS = [D_REC, D_APR, D_OPE, D_ERR, D_EST, D_ACC, D_SAT];
 // Créditos, en un solo sitio: encabezado de la página y pie de los dos tipos de reporte.
-const AUTORES = 'Autores: Nicolas de la Espriella Vélez P.h.d, Daniel José Salas Álvarez M.s.c, Pierre Augusto Peña salgado M.s.c';
+const AUTORES = 'Autores: Nicolas de la Espriella Vélez Ph. D., Daniel José Salas Álvarez M. Sc., Pierre Augusto Peña salgado M. Sc.';
 const nivelDe = s => s >= 70 ? 'Alto' : s >= 50 ? 'Moderado' : 'Bajo';
 const scorePct = media => (media - 1) / 4 * 100;
 const VISITADOS = new Set();
