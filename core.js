@@ -328,7 +328,6 @@ function aplicarIdioma() {
   set('#pie', T('pie'));
   set('label[for="nav-sel"]', T('ejercicio'));
   set('label[for="speed"]', T('velocidad'));
-  set('label[for="lang"]', T('idioma'));
   const sp = $('speed');
   if (sp) ['vel2', 'vel1', 'vel05', 'vel025', 'vel01'].forEach((k, i) => { if (sp.options[i]) sp.options[i].text = T(k); });
   set('#abrir-informe', T('btnInforme'));
@@ -351,16 +350,18 @@ function aplicarIdioma() {
 }
 
 function initIdioma() {
-  const sel = $('lang'); if (!sel) return;
+  const radios = [...document.querySelectorAll('input[name="lang"]')];
+  if (!radios.length) return;
   try { const g = localStorage.getItem('cap3-lang'); if (g === 'en' || g === 'es') LANG = g; } catch (e) { /* sin almacenamiento */ }
-  sel.value = LANG;
+  radios.forEach(r => { r.checked = r.value === LANG; });
   aplicarIdioma();
-  sel.addEventListener('change', () => {
-    LANG = sel.value === 'en' ? 'en' : 'es';
+  radios.forEach(r => r.addEventListener('change', () => {
+    if (!r.checked) return;
+    LANG = r.value === 'en' ? 'en' : 'es';
     try { localStorage.setItem('cap3-lang', LANG); } catch (e) { /* sin almacenamiento */ }
     aplicarIdioma(); buildNav();
     if (CUR) show(CUR.id);              // repintar el módulo abierto en el nuevo idioma
-  });
+  }));
 }
 
 window.addEventListener('DOMContentLoaded', () => {

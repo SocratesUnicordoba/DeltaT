@@ -19,8 +19,16 @@ body{font-family:Outfit,system-ui,sans-serif;color:var(--txt);min-height:100vh;
 /* esquina superior derecha: idioma arriba, botón de evaluación debajo */
 .esquina-der{float:right;display:flex;flex-direction:column;align-items:flex-end;gap:.55rem;margin:0 0 1rem 1.2rem}
 .informe-btn{margin:0;padding:.6rem 1rem;font-size:.78rem;border-color:#7c5cff66;background:#ffffff0d}
-.idioma-caja{margin:0}
-.idioma-caja select{min-width:7.5rem}
+/* Idioma: dos botones de radio con bandera en SVG (Windows no dibuja los emoji de bandera) */
+.idiomas{display:flex;gap:.4rem}
+.bandera{position:relative;display:inline-flex;align-items:center;gap:.42rem;padding:.42rem .72rem;
+  border-radius:999px;border:1px solid var(--bord);background:var(--card);cursor:pointer;transition:.16s;
+  font-family:var(--mono);font-size:.75rem;font-weight:600;color:var(--muted)}
+.bandera input{position:absolute;inset:0;opacity:0;margin:0;cursor:pointer}
+.bandera svg{flex:none;width:20px;height:12px;border-radius:2px;display:block;box-shadow:0 0 0 1px #0007}
+.bandera:hover{border-color:var(--acc2);color:var(--txt)}
+.bandera:has(input:checked){background:linear-gradient(135deg,var(--acc),#4f7bff);border-color:transparent;color:#fff}
+.bandera input:focus-visible{outline:2px solid var(--acc2);outline-offset:3px;border-radius:999px}
 .marca{display:inline-flex;align-items:center;gap:.85rem;margin-bottom:.5rem}
 .marca-sim{font-size:clamp(2.1rem,4.5vw,3.1rem);font-weight:700;line-height:1;letter-spacing:-.02em;
   background:linear-gradient(135deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent}
